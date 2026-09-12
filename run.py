@@ -93,9 +93,10 @@ def check_setup():
     cfg = model.settings()
     for label, key in (("API_KEY", "api_key"), ("BASE_URL", "base_url"), ("MODEL", "model")):
         value = cfg[key]
-        if value == "paste-your-key-here":
+        if key == "api_key" and model.key_is_missing(value):
             ui.action("[X] ", "you have not pasted your key into .env yet", ui.RED)
-            ui.step("Open .env and replace paste-your-key-here with the key you were sent.")
+            ui.step("Open .env, delete what is after API_KEY= and paste your own key.")
+            ui.step("You make one at https://platform.ifm.ai/")
             ok = False
         elif not value:
             ui.action("[X] ", "%s is missing from .env" % label, ui.RED)
@@ -158,6 +159,17 @@ def self_test():
     back = memory.load(scratch)
     os.remove(scratch)
     check(back["notes"] == sample["notes"], "memory.yaml survives a round trip")
+
+    # The shipped .env.example must not look like it already has a key in it,
+    # or every student will be told they are set up when they are not.
+    if os.path.exists(".env.example"):
+        example_key = ""
+        with open(".env.example", "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("API_KEY="):
+                    example_key = line.split("=", 1)[1].strip()
+        check(model.key_is_missing(example_key),
+              ".env.example ships without a usable key (%r)" % example_key[:24])
 
     # The harness rules must stay free of legal guidance - that is the whole design.
     rules = loop.HARNESS_RULES.lower()

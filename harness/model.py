@@ -47,6 +47,20 @@ def settings():
     }
 
 
+def key_is_missing(api_key):
+    """True if this is not a real key yet.
+
+    We do not just compare against the placeholder text, because the placeholder
+    tends to get edited. Anything empty, obviously a stand-in, or too short to be
+    a real key counts as missing. Better to nag someone with a valid key than to
+    let thirty people think they are set up when they are not.
+    """
+    value = (api_key or "").strip().lower()
+    if not value or len(value) < 20 or "..." in value:
+        return True
+    return any(word in value for word in ("paste", "your-key", "xxxx", "placeholder"))
+
+
 class ModelError(Exception):
     """Raised when the model server will not answer us."""
 
@@ -88,11 +102,11 @@ def ask(messages, tools=None, max_tokens=4000, temperature=0.3):
     """
     cfg = settings()
 
-    if not cfg["api_key"] or cfg["api_key"] == "paste-your-key-here":
+    if key_is_missing(cfg["api_key"]):
         raise ModelError(
             "No API key found.\n"
             "   Open the file .env and paste your key after API_KEY=\n"
-            "   (If there is no .env file, copy .env.example and rename the copy to .env.)"
+            "   You make a key at https://platform.ifm.ai/"
         )
     if not cfg["base_url"]:
         raise ModelError("BASE_URL is missing from your .env file.")
