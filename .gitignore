@@ -1,0 +1,12 @@
+# Your API key lives here. NEVER commit it.
+.env
+
+# Python noise
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Working files the harness creates as you go
+memory.yaml
+problems/*/output/*.md
